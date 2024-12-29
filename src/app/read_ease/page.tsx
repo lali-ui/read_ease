@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Timer, Book, Brain, Sparkles, Sun, Moon } fr
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TextItem } from 'pdfjs-dist/types/src/display/api';
+import axios from 'axios';
 
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
@@ -80,10 +81,6 @@ const ReadingApp = () => {
     setCurrentMode(modesList[newIndex]);
   };
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
   useEffect(() => {
     const savedSettings = localStorage.getItem('readingAppSettings');
     if (savedSettings) {
@@ -125,7 +122,7 @@ const ReadingApp = () => {
   };
 
   const handleTextToSpeech = () => {
-    const utterance = new SpeechSynthesisUtterance(inputText);
+    const utterance = new SpeechSynthesisUtterance(extractedText);
     
     if (isSpeaking) {
       window.speechSynthesis.cancel();
@@ -150,11 +147,12 @@ const ReadingApp = () => {
   //   }
   // };
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    e.preventDefault();
-    const pastedText = e.clipboardData.getData('text');
-    setInputText(pastedText);
-  };
+  // const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+  //   e.preventDefault();
+  //   const pastedText = e.clipboardData.getData('text');
+  //   setInputText(pastedText);
+  //   setExtractedText(pastedText);
+  // };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -233,9 +231,51 @@ const ReadingApp = () => {
     }
   };
 
-  const handleUrlSubmit = () => {
-    // Implement logic to fetch and extract text from the URL
-    // For example, you can use fetch to get the content from the URL
+  const handleUrlSubmit = async () => {
+    if (!url) return;
+    
+    setIsLoading(true);
+    try {
+        const response = await axios.get(`https://app.scrapingbee.com/api/v1`, {
+            params: {
+                api_key: '2V9QGZVWWXRNCKSR0SL0919OUW1EGZABVB36DSTV5ZVYZ4HL23154YSU8Q1VGCG7G6DPOH7HSRYBFRX7', // Replace with your actual API key
+                url: url
+            }
+        });
+        
+        // Extract and clean the scraped content
+        const scrapedContent = response.data; // Assuming this contains the HTML content
+        
+        // Create a new DOM parser
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(scrapedContent, 'text/html');
+        
+        // Remove unwanted elements
+        const unwantedElements = ['script', 'style', 'header', 'footer', 'nav', 'aside'];
+        unwantedElements.forEach(tag => {
+            const elements = doc.getElementsByTagName(tag);
+            while (elements.length > 0) {
+                elements[0]?.parentNode?.removeChild(elements[0]);
+            }
+        });
+
+        // Extract text content from the body
+        const textContent = doc.body.innerText || ''; // Get the text content
+        
+        // Clean the text content to focus on main information
+        const cleanedText = textContent
+            .split('\n') // Split by new lines
+            .filter(line => line.trim() !== '' && line.length > 20) // Remove empty lines and short lines
+            .join('\n'); // Join back into a single string
+        
+        setExtractedText(cleanedText.trim()); // Set the cleaned text content
+        setInputText(''); // Clear input text if needed
+    } catch (error) {
+        console.error('Error fetching URL content:', error);
+        setExtractedText('Error: Could not fetch content from the provided URL. Please make sure the URL is correct and accessible.');
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -251,7 +291,7 @@ const ReadingApp = () => {
             </div>
             <div className="flex items-center gap-4">
               <button 
-                onClick={toggleTheme}
+                onClick={() => setIsDarkMode(!isDarkMode)}
                 className={`p-2 rounded-full transition-colors ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 {isDarkMode ? <Sun className="w-5 h-5 text-white" /> : <Moon className="w-5 h-5 text-black" />}
@@ -456,8 +496,15 @@ const ReadingApp = () => {
                     <textarea
                       ref={textareaRef}
                       value={inputText}
-                      onChange={(e) => setInputText(e.target.value)}
-                      onPaste={handlePaste}
+                      onChange={(e) => {
+                        setInputText(e.target.value);
+                        setExtractedText(e.target.value);
+                      }}
+                      onPaste={(e) => {
+                        const pastedText = e.clipboardData.getData('text');
+                        setInputText(pastedText);
+                        setExtractedText(pastedText);
+                      }}
                       placeholder="Paste or type your text here..."
                       className={`w-full h-64 p-4 rounded-lg border resize-none focus:ring-2 focus:ring-blue-500 transition-all ${
                         isDarkMode 
@@ -524,11 +571,20 @@ const ReadingApp = () => {
                       />
                       <button
                         onClick={handleUrlSubmit}
-                        className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        disabled={isLoading}
+                        className={`px-6 py-3 bg-blue-500 text-white rounded-lg transition-colors ${
+                          isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
+                        }`}
                       >
-                        Extract Text
+                        {isLoading ? 'Extracting...' : 'Extract Text'}
                       </button>
                     </div>
+                    {isLoading && (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                        <p className="mt-2 text-gray-600">Loading...</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -540,7 +596,7 @@ const ReadingApp = () => {
                   }}
                 >
                   {showFocusLine ? (
-                    inputText.split('.').map((sentence, index) => (
+                    extractedText.split('.').map((sentence, index) => (
                       <div
                         key={index}
                         className={`py-2 hover:bg-blue-100 transition-colors cursor-pointer ${
@@ -562,7 +618,7 @@ const ReadingApp = () => {
                         color: isDarkMode ? '#FFFFFF' : '#000000',
                       }}
                     >
-                      {inputText || extractedText}
+                      {extractedText}
                     </div>
                   )}
                 </div>
