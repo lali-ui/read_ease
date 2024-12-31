@@ -1,1 +1,1 @@
-This is a [Read Ease](https://read-ease.vercel.app/), try it out!
+This is a [Read Ease](https://read-ease-nine.vercel.app/), try it out!
