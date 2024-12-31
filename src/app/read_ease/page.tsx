@@ -650,8 +650,8 @@ const ReadingApp = () => {
                             fontWeight: isBold ? 'bold' : 'normal',
                             fontStyle: isItalic ? 'italic' : 'normal',
                             textDecoration: isUnderline ? 'underline' : 'none',
-                            color: customColor,
                             fontFamily: isItalic ? 'serif' : 'inherit',
+                            color: customColor,
                           }}
                         >
                           {sentence.trim() + '.'}
@@ -662,12 +662,11 @@ const ReadingApp = () => {
                         style={{
                           fontSize: `${fontSize}px`,
                           lineHeight: lineSpacing,
-                          color: isDarkMode ? '#FFFFFF' : '#000000',
                           fontWeight: isBold ? 'bold' : 'normal',
                           fontStyle: isItalic ? 'italic' : 'normal',
                           textDecoration: isUnderline ? 'underline' : 'none',
-                          color: customColor,
                           fontFamily: isItalic ? 'serif' : 'inherit',
+                          color: customColor,
                         }}
                       >
                         {extractedText}
