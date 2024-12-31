@@ -27,6 +27,10 @@ const ReadingApp = () => {
   const [inputType, setInputType] = useState<'text' | 'pdf' | 'url'>('text');
   const [url, setUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [customColor, setCustomColor] = useState<string>('#000000'); // Default color
 
   const modes: Record<string, { icon: React.ReactElement; name: string; style: React.CSSProperties }> = {
     dyslexia: {
@@ -588,39 +592,88 @@ const ReadingApp = () => {
                   </div>
                 )}
 
-                <div 
-                  className={`mt-6 p-6 rounded-lg border ${showFocusLine ? 'space-y-2' : ''}`}
-                  style={{
-                    ...modes[currentMode].style,
-                    color: isDarkMode ? '#FFFFFF' : '#000000',
-                  }}
-                >
-                  {showFocusLine ? (
-                    extractedText.split('.').map((sentence, index) => (
+                <div className="p-6">
+                  <div className="flex gap-4 mb-4 items-center">
+                    <button 
+                      onClick={() => setIsBold(!isBold)} 
+                      className={`p-2 rounded border transition-colors ${isBold ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black hover:bg-gray-300'}`}
+                    >
+                      Bold
+                    </button>
+                    <button 
+                      onClick={() => setIsItalic(!isItalic)} 
+                      className={`p-2 rounded border transition-colors ${isItalic ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black hover:bg-gray-300'}`}
+                    >
+                      Italic
+                    </button>
+                    <button 
+                      onClick={() => setIsUnderline(!isUnderline)} 
+                      className={`p-2 rounded border transition-colors ${isUnderline ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black hover:bg-gray-300'}`}
+                    >
+                      Underline
+                    </button>
+                    
+                    <div className="relative">
+                      <input
+                        type="color"
+                        value={customColor}
+                        onChange={(e) => setCustomColor(e.target.value)}
+                        className="absolute opacity-0 cursor-pointer w-full h-full"
+                        title="Select text color"
+                        id="color-picker"
+                      />
                       <div
-                        key={index}
-                        className={`py-2 hover:bg-blue-100 transition-colors cursor-pointer ${
-                          isDarkMode ? 'text-white' : 'text-black'
-                        }`}
+                        className="w-10 h-10 border rounded cursor-pointer"
+                        style={{ backgroundColor: customColor }}
+                        onClick={() => document.getElementById('color-picker')?.click()}
+                      >
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`mt-6 p-6 rounded-lg border ${showFocusLine ? 'space-y-2' : ''}`}
+                    style={{
+                      ...modes[currentMode].style,
+                    }}
+                  >
+                    {showFocusLine ? (
+                      extractedText.split('.').map((sentence, index) => (
+                        <div
+                          key={index}
+                          className={`py-2 hover:bg-blue-100 transition-colors cursor-pointer ${
+                            isDarkMode ? 'text-white' : 'text-black'
+                          }`}
+                          style={{
+                            fontSize: `${fontSize}px`,
+                            lineHeight: lineSpacing,
+                            fontWeight: isBold ? 'bold' : 'normal',
+                            fontStyle: isItalic ? 'italic' : 'normal',
+                            textDecoration: isUnderline ? 'underline' : 'none',
+                            color: customColor,
+                            fontFamily: isItalic ? 'serif' : 'inherit',
+                          }}
+                        >
+                          {sentence.trim() + '.'}
+                        </div>
+                      ))
+                    ) : (
+                      <div
                         style={{
                           fontSize: `${fontSize}px`,
                           lineHeight: lineSpacing,
+                          color: isDarkMode ? '#FFFFFF' : '#000000',
+                          fontWeight: isBold ? 'bold' : 'normal',
+                          fontStyle: isItalic ? 'italic' : 'normal',
+                          textDecoration: isUnderline ? 'underline' : 'none',
+                          color: customColor,
+                          fontFamily: isItalic ? 'serif' : 'inherit',
                         }}
                       >
-                        {sentence.trim() + '.'}
+                        {extractedText}
                       </div>
-                    ))
-                  ) : (
-                    <div
-                      style={{
-                        fontSize: `${fontSize}px`,
-                        lineHeight: lineSpacing,
-                        color: isDarkMode ? '#FFFFFF' : '#000000',
-                      }}
-                    >
-                      {extractedText}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </Card>
