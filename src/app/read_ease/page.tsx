@@ -505,6 +505,7 @@ const ReadingApp = () => {
                         setExtractedText(e.target.value);
                       }}
                       onPaste={(e) => {
+                        e.preventDefault();
                         const pastedText = e.clipboardData.getData('text');
                         setInputText(pastedText);
                         setExtractedText(pastedText);
